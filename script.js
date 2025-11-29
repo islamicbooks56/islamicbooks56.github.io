@@ -1,4 +1,4 @@
-// Google Drive URL formatları (sadece PDF ve Audio için)
+// Google Drive URL formatları
 const DRIVE_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=';
 
 // Global değişkenler
@@ -45,10 +45,10 @@ function groupBooksByTitle(books) {
         }
         
         if (book.Type === 'cover') {
-            // Cover için CoverFile kullan (local dosya)
+            // Cover için CoverFile kullan
             grouped[book.Title][book.Type] = book.CoverFile;
         } else {
-            // PDF ve Audio için FileId kullan (Google Drive)
+            // PDF ve Audio için FileId kullan
             grouped[book.Title][book.Type] = book.FileId;
         }
     });
@@ -71,16 +71,31 @@ function displayBooks(booksToDisplay) {
     // Sıralama uygula
     booksArray = applySorting(booksArray);
     
+    // Eski Schema etiketlerini temizle (Sayfa Yenilenmediği durumlarda)
+    document.querySelectorAll('.book-schema').forEach(el => el.remove());
+    
     // Tabloyu oluştur
     booksArray.forEach((book, index) => {
+        // --- SCHEMA MARKUP EKLEME BAŞLANGIÇ ---
+        const schemaScript = document.createElement('script');
+        schemaScript.type = 'application/ld+json';
+        schemaScript.className = 'book-schema'; // Temizlik için sınıf ekledik
+        schemaScript.textContent = createBookSchema(book.title);
+        
+        // Schema etiketini body'ye ekle
+        document.body.appendChild(schemaScript);
+        // --- SCHEMA MARKUP EKLEME BİTİŞ ---
+        
         const row = document.createElement('tr');
         
         // No
         const noCell = document.createElement('td');
-        noCell.textContent = index + 1;
+        // NOT: Tablo No'su, sıralamadan sonraki index + 1 olmalıdır.
+        // Eğer sıralama yapılırsa, bu No numarası statik olmayabilir.
+        noCell.textContent = index + 1; 
         row.appendChild(noCell);
         
-        // Headline (SEO için strong tag)
+        // Headline
         const titleCell = document.createElement('td');
         const titleStrong = document.createElement('strong');
         titleStrong.textContent = book.title;
@@ -96,8 +111,6 @@ function displayBooks(booksToDisplay) {
             pdfLink.className = 'btn-download';
             pdfLink.innerHTML = '<i class="fas fa-file-pdf"></i> <span>Download</span>';
             pdfLink.target = '_blank';
-            pdfLink.rel = 'noopener noreferrer'; // SEO & Security
-            pdfLink.setAttribute('aria-label', 'Download ' + book.title + ' PDF'); // Accessibility
             pdfCell.appendChild(pdfLink);
         } else {
             pdfCell.innerHTML = '<span class="text-muted">N/A</span>';
@@ -112,22 +125,19 @@ function displayBooks(booksToDisplay) {
             audioLink.className = 'btn-download';
             audioLink.innerHTML = '<i class="fas fa-headphones"></i> <span>Download</span>';
             audioLink.target = '_blank';
-            audioLink.rel = 'noopener noreferrer'; // SEO & Security
-            audioLink.setAttribute('aria-label', 'Download ' + book.title + ' MP3 Audiobook'); // Accessibility
             audioCell.appendChild(audioLink);
         } else {
             audioCell.innerHTML = '<span class="text-muted">N/A</span>';
         }
         row.appendChild(audioCell);
         
-        // Cover (Local dosya sistemi)
+        // Cover
         const coverCell = document.createElement('td');
         if (book.files.cover) {
             const coverBtn = document.createElement('button');
             coverBtn.className = 'btn-cover';
             coverBtn.innerHTML = '<i class="fas fa-image"></i> <span>View</span>';
             coverBtn.onclick = () => showCoverModal(book.title, book.files.cover);
-            coverBtn.setAttribute('aria-label', 'View ' + book.title + ' cover'); // Accessibility
             coverCell.appendChild(coverBtn);
         } else {
             coverCell.innerHTML = '<span class="text-muted">N/A</span>';
@@ -203,15 +213,46 @@ function applySorting(booksArray) {
     return sorted;
 }
 
-// Kapak resmini modal'da göster (Local dosya sistemi)
+// Kapak resmini modal'da göster
 function showCoverModal(title, coverFile) {
     const modal = new bootstrap.Modal(document.getElementById('coverModal'));
     const modalTitle = document.getElementById('coverModalTitle');
     const modalImage = document.getElementById('coverModalImage');
     
     modalTitle.textContent = title;
-    modalImage.src = 'covers/' + coverFile; // Local dosya yolu
-    modalImage.alt = title + ' book cover'; // SEO için alt text
+    modalImage.src = 'covers/' + coverFile;
+    // ALT etiketi eklendi: SEO ve Erişilebilirlik için önemlidir.
+    modalImage.alt = 'Cover image for the book: ' + title;
     
     modal.show();
+}
+
+// --- YENİ SCHEMA MARKUP FONKSİYONU ---
+/**
+ * Kitap başlığını kullanarak Book Schema (JSON-LD) oluşturur.
+ * @param {string} title - Kitabın başlığı.
+ * @returns {string} Oluşturulan JSON-LD dizesi.
+ */
+function createBookSchema(title) {
+    const schema = {
+        "@context": "https://schema.org",
+        "@type": "Book",
+        "name": title,
+        "description": `Free download of the Islamic book: ${title} in PDF and MP3 format.`,
+        "url": window.location.href, // Kitabın bulunduğu sayfa
+        "inLanguage": "en", // Kitaplarımızın İngilizce olduğunu biliyoruz (books.json'a göre)
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "url": window.location.href
+        },
+        "potentialAction": {
+            "@type": "DownloadAction",
+            "target": window.location.href,
+            "encodingFormat": ["application/pdf", "audio/mpeg"]
+        }
+    };
+    return JSON.stringify(schema, null, 2);
 }
