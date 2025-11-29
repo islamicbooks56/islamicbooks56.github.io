@@ -1,6 +1,5 @@
 // Google Drive URL formatları
 const DRIVE_DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=';
-const DRIVE_THUMBNAIL_URL = 'https://drive.google.com/thumbnail?id=';
 
 // Global değişkenler
 let allBooks = [];
@@ -44,7 +43,14 @@ function groupBooksByTitle(books) {
         if (!grouped[book.Title]) {
             grouped[book.Title] = {};
         }
-        grouped[book.Title][book.Type] = book.FileId;
+        
+        if (book.Type === 'cover') {
+            // Cover için CoverFile kullan
+            grouped[book.Title][book.Type] = book.CoverFile;
+        } else {
+            // PDF ve Audio için FileId kullan
+            grouped[book.Title][book.Type] = book.FileId;
+        }
     });
     
     return grouped;
@@ -88,8 +94,6 @@ function displayBooks(booksToDisplay) {
             pdfLink.className = 'btn-download';
             pdfLink.innerHTML = '<i class="fas fa-file-pdf"></i> <span>Download</span>';
             pdfLink.target = '_blank';
-            // Google Analytics Event
-            pdfLink.onclick = () => trackDownload(book.title, 'pdf');
             pdfCell.appendChild(pdfLink);
         } else {
             pdfCell.innerHTML = '<span class="text-muted">N/A</span>';
@@ -104,8 +108,6 @@ function displayBooks(booksToDisplay) {
             audioLink.className = 'btn-download';
             audioLink.innerHTML = '<i class="fas fa-headphones"></i> <span>Download</span>';
             audioLink.target = '_blank';
-            // Google Analytics Event
-            audioLink.onclick = () => trackDownload(book.title, 'audio');
             audioCell.appendChild(audioLink);
         } else {
             audioCell.innerHTML = '<span class="text-muted">N/A</span>';
@@ -195,39 +197,14 @@ function applySorting(booksArray) {
 }
 
 // Kapak resmini modal'da göster
-function showCoverModal(title, fileId) {
+function showCoverModal(title, coverFile) {
     const modal = new bootstrap.Modal(document.getElementById('coverModal'));
     const modalTitle = document.getElementById('coverModalTitle');
     const modalImage = document.getElementById('coverModalImage');
     
     modalTitle.textContent = title;
-    modalImage.src = DRIVE_THUMBNAIL_URL + fileId + '&sz=w800';
+    modalImage.src = 'covers/' + coverFile;
     modalImage.alt = title;
     
-    // Google Analytics Event - Cover View
-    trackCoverView(title);
-    
     modal.show();
-}
-
-// Google Analytics - Download Tracking
-function trackDownload(bookTitle, fileType) {
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'file_download', {
-            'event_category': 'Downloads',
-            'event_label': bookTitle,
-            'file_type': fileType,
-            'file_name': bookTitle + '.' + fileType
-        });
-    }
-}
-
-// Google Analytics - Cover View Tracking
-function trackCoverView(bookTitle) {
-    if (typeof gtag !== 'undefined') {
-        gtag('event', 'cover_view', {
-            'event_category': 'Engagement',
-            'event_label': bookTitle
-        });
-    }
 }
