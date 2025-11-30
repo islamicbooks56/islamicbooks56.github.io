@@ -178,5 +178,42 @@
     "CoverFile": "the-solution-to-secret-sorrows.jpg",
     "Type": "cover",
     "Language": "english"
+  },
+    {
+    "Title": "SIGNS FROM THE QURAN",
+    "Type": "cover",
+    "Language": "english",
+    "CoverFile": "signs-from-the-quran.jpg"
+  },
+  {
+    "Title": "SIGNS FROM THE QURAN",
+    "Type": "pdf",
+    "Language": "english",
+    "FileId": "1g0M9ILkTFgH2YAFu2DK-nxm2QDXvrf_j"
+  },
+  {
+    "Title": "SIGNS FROM THE QURAN",
+    "Type": "audio",
+    "Language": "english",
+    "FileId": "1fbhUbX008E9_yai6xnXc5EjoNPASKlju"
+  },
+  {
+    "Title": "THE SILENT LANGUAGE OF EVIL",
+    "Type": "pdf",
+    "Language": "english",
+    "FileId": "1Lm0vztEYy4sbuQFtV3iDdp4rY-zzv_1f"
+  },
+  {
+    "Title": "THE SILENT LANGUAGE OF EVIL",
+    "Type": "audio",
+    "Language": "english",
+    "FileId": "1aHoo_av1oHPSqK8PUMk9OwFPWgb4YyuB"
+  },
+  {
+    "Title": "THE SILENT LANGUAGE OF EVIL",
+    "Type": "cover",
+    "Language": "english",
+    "CoverFile": "the-silent-language-of-evil.jpg"
   }
 ]
+
