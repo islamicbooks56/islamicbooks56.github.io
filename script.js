@@ -41,15 +41,20 @@ function groupBooksByTitle(books) {
     
     books.forEach(book => {
         if (!grouped[book.Title]) {
-            grouped[book.Title] = {};
+            grouped[book.Title] = {
+                description: book.Description || ''
+            };
         }
         
         if (book.Type === 'cover') {
-            // Cover için CoverFile kullan
             grouped[book.Title][book.Type] = book.CoverFile;
         } else {
-            // PDF ve Audio için FileId kullan
             grouped[book.Title][book.Type] = book.FileId;
+        }
+        
+        // Description'ı sakla
+        if (book.Description && !grouped[book.Title].description) {
+            grouped[book.Title].description = book.Description;
         }
     });
     
@@ -71,34 +76,38 @@ function displayBooks(booksToDisplay) {
     // Sıralama uygula
     booksArray = applySorting(booksArray);
     
-    // Eski Schema etiketlerini temizle (Sayfa Yenilenmediği durumlarda)
+    // Eski Schema etiketlerini temizle
     document.querySelectorAll('.book-schema').forEach(el => el.remove());
     
     // Tabloyu oluştur
     booksArray.forEach((book, index) => {
-        // --- SCHEMA MARKUP EKLEME BAŞLANGIÇ ---
         const schemaScript = document.createElement('script');
         schemaScript.type = 'application/ld+json';
-        schemaScript.className = 'book-schema'; // Temizlik için sınıf ekledik
+        schemaScript.className = 'book-schema';
         schemaScript.textContent = createBookSchema(book.title);
-        
-        // Schema etiketini body'ye ekle
         document.body.appendChild(schemaScript);
-        // --- SCHEMA MARKUP EKLEME BİTİŞ ---
         
         const row = document.createElement('tr');
         
         // No
         const noCell = document.createElement('td');
-        // NOT: Tablo No'su, sıralamadan sonraki index + 1 olmalıdır.
-        // Eğer sıralama yapılırsa, bu No numarası statik olmayabilir.
         noCell.textContent = index + 1; 
         row.appendChild(noCell);
         
-        // Headline
+        // Headline with Tooltip
         const titleCell = document.createElement('td');
         const titleStrong = document.createElement('strong');
         titleStrong.textContent = book.title;
+        titleStrong.style.cursor = 'help';
+        
+        // Bootstrap Tooltip ekleme
+        if (book.files.description) {
+            titleStrong.setAttribute('data-bs-toggle', 'tooltip');
+            titleStrong.setAttribute('data-bs-placement', 'top');
+            titleStrong.setAttribute('data-bs-title', book.files.description);
+            titleStrong.setAttribute('data-bs-custom-class', 'custom-tooltip');
+        }
+        
         titleCell.appendChild(titleStrong);
         titleCell.style.textAlign = 'left';
         row.appendChild(titleCell);
@@ -146,6 +155,15 @@ function displayBooks(booksToDisplay) {
         
         tbody.appendChild(row);
     });
+    
+    // Bootstrap Tooltip'leri başlat
+    initializeTooltips();
+}
+
+// Bootstrap Tooltip'leri başlat
+function initializeTooltips() {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 }
 
 // Arama fonksiyonu kurulumu
@@ -221,26 +239,20 @@ function showCoverModal(title, coverFile) {
     
     modalTitle.textContent = title;
     modalImage.src = 'covers/' + coverFile;
-    // ALT etiketi eklendi: SEO ve Erişilebilirlik için önemlidir.
     modalImage.alt = 'Cover image for the book: ' + title;
     
     modal.show();
 }
 
-// --- YENİ SCHEMA MARKUP FONKSİYONU ---
-/**
- * Kitap başlığını kullanarak Book Schema (JSON-LD) oluşturur.
- * @param {string} title - Kitabın başlığı.
- * @returns {string} Oluşturulan JSON-LD dizesi.
- */
+// Schema Markup fonksiyonu
 function createBookSchema(title) {
     const schema = {
         "@context": "https://schema.org",
         "@type": "Book",
         "name": title,
         "description": `Free download of the Islamic book: ${title} in PDF and MP3 format.`,
-        "url": window.location.href, // Kitabın bulunduğu sayfa
-        "inLanguage": "en", // Kitaplarımızın İngilizce olduğunu biliyoruz (books.json'a göre)
+        "url": window.location.href,
+        "inLanguage": "en",
         "offers": {
             "@type": "Offer",
             "price": "0",
